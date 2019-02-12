@@ -7,5 +7,6 @@ tensorflow
 tensorboardX
 tqdm
 urllib3
-# torch==1.0.0
-./torch-1.1.0a0+fc4f33b-cp37-cp37m-linux_x86_64.whl
+torch==1.0.0
+# ./torch-1.1.0a0+fc4f33b-cp37-cp37m-linux_x86_64.whl
+pytorch-pretrained-bert
