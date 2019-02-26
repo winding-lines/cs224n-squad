@@ -10,4 +10,4 @@ pyvenv.cfg
 *.whl
 lib64
 pip-selfcheck.json
-
+bert_output/
