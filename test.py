@@ -128,7 +128,7 @@ def main(args):
     # Write submission file
     sub_path = join(args.save_dir, args.split + '_' + args.sub_file)
     log.info('Writing submission file to {}...'.format(sub_path))
-    with open(sub_path, 'w') as csv_fh:
+    with open(sub_path, 'w', newline='', encoding='utf-8') as csv_fh:
         csv_writer = csv.writer(csv_fh, delimiter=',')
         csv_writer.writerow(['Id', 'Predicted'])
         for uuid in sorted(sub_dict):
