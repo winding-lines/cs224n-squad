@@ -5,16 +5,15 @@ import unittest
 import torch
 import numpy as np
 import random
+from test.utils import init_random
 
 import models
 
-class BaselineTest(unittest.TestCase):
+class WordEmbeddingsTest(unittest.TestCase):
     def setUp(self):
         # setup the device
         self.device = torch.device("cpu")
-        random.seed(41)
-        np.random.seed(41)
-        torch.manual_seed(41)
+        init_random(41)
 
     def testForward(self):
         """ This test hardcodes values from the working code.
