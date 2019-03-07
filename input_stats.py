@@ -21,8 +21,6 @@ class WordStats:
         NULL_IDX = 1
         # ['context_idxs', 'context_char_idxs', 'ques_idxs', 'ques_char_idxs', 'y1s', 'y2s', 'ids']
         context_idxs = data['context_idxs']
-        print(f"context_idxs shape {context_idxs.shape}, first {np.count_nonzero(context_idxs[0] == OOV_IDX)}")
-
         oov = 0
         total = 0
         for one in context_idxs:
