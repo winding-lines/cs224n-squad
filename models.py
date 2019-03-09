@@ -5,12 +5,11 @@ Author:
 """
 
 import layers
-import char_layers
 import torch
 import torch.nn as nn
 import collections
-from char_layers import CharDecoder, CharEmbeddings, CharEmbeddingsShape, CharDecoderShape
-from typing import Optional
+from util import InputEmbeddings
+from typing import Optional, NamedTuple
 
 
 class BiDAF(nn.Module):
@@ -29,13 +28,18 @@ class BiDAF(nn.Module):
         - Output layer: Simple layer (e.g., fc + softmax) to get final outputs.
 
     Args:
-        word_vectors (torch.Tensor): Pre-trained word vectors.
+        embeddings (InputEmbedding): Pre-trained word vectors and optionally char vectors
         hidden_size (int): Number of features in the hidden state at each layer.
         drop_prob (float): Dropout probability.
     """
-    def __init__(self, word_vectors, hidden_size, drop_prob=0., char_shape=Optional[(CharEmbeddingsShape, CharDecoderShape)]):
+    def __init__(self, embeddings:InputEmbeddings, hidden_size, drop_prob=0.):
         super(BiDAF, self).__init__()
+
+        word_vectors = embeddings.word_vectors
+        char_vectors = embeddings.char_vectors
+
         self.emb = layers.Embedding(word_vectors=word_vectors,
+                                    char_vectors=char_vectors,
                                     hidden_size=hidden_size,
                                     drop_prob=drop_prob)
 
@@ -55,13 +59,20 @@ class BiDAF(nn.Module):
         self.out = layers.BiDAFOutput(hidden_size=hidden_size,
                                       drop_prob=drop_prob)
 
-    def forward(self, cw_idxs, qw_idxs):
+    def forward(self, cw_idxs: torch.Tensor, cc_idxs: Optional[torch.Tensor], qw_idxs: torch.Tensor, qc_idxs: Optional[torch.Tensor]):
+        """ Run a forward step
+            cw_idxs: word indices in the context
+            cc_idxs: char indices in the context
+            qw_idxs: word indices in the question
+            qc_idx: char indices in the question
+        """
+
         c_mask = torch.zeros_like(cw_idxs) != cw_idxs
         q_mask = torch.zeros_like(qw_idxs) != qw_idxs
         c_len, q_len = c_mask.sum(-1), q_mask.sum(-1)
 
-        c_emb = self.emb(cw_idxs)         # (batch_size, c_len, hidden_size)
-        q_emb = self.emb(qw_idxs)         # (batch_size, q_len, hidden_size)
+        c_emb = self.emb(cw_idxs, cc_idxs) # (batch_size, c_len, hidden_size)
+        q_emb = self.emb(qw_idxs, qc_idxs) # (batch_size, q_len, hidden_size)
 
         c_enc = self.enc(c_emb, c_len)    # (batch_size, c_len, 2 * hidden_size)
         q_enc = self.enc(q_emb, q_len)    # (batch_size, q_len, 2 * hidden_size)

@@ -42,13 +42,15 @@ def main(args):
 
     # Get embeddings
     log.info('Loading embeddings...')
-    word_vectors = util.torch_from_json(args.word_emb_file)
+    embeddings = util.load_embeddings(args)
 
     # Get model
     log.info('Building model...')
-    model = BiDAF(word_vectors=word_vectors,
+
+    model = BiDAF(embeddings=embeddings,
                   hidden_size=args.hidden_size,
-                  drop_prob=args.drop_prob)
+                  drop_prob=args.drop_prob
+                  )
     model = nn.DataParallel(model, args.gpu_ids)
     if args.load_path:
         log.info('Loading checkpoint from {}...'.format(args.load_path))
@@ -100,10 +102,17 @@ def main(args):
                 cw_idxs = cw_idxs.to(device)
                 qw_idxs = qw_idxs.to(device)
                 batch_size = cw_idxs.size(0)
+                if args.use_char_emb:
+                    cc_idxs = cc_idxs.to(device)
+                    qc_idxs = qc_idxs.to(device)
+                else:
+                    cc_idx = None
+                    qc_idxs = None
+
                 optimizer.zero_grad()
 
                 # Forward
-                log_p1, log_p2 = model(cw_idxs, qw_idxs)
+                log_p1, log_p2 = model(cw_idxs, cc_idxs, qw_idxs, qc_idxs)
                 y1, y2 = y1.to(device), y2.to(device)
                 loss = F.nll_loss(log_p1, y1) + F.nll_loss(log_p2, y2)
                 loss_val = loss.item()

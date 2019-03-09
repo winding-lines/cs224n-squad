@@ -8,6 +8,7 @@ bin/
 lib/
 pyvenv.cfg
 *.whl
+*.pyc
 lib64
 pip-selfcheck.json
 bert_output/

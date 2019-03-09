@@ -7,31 +7,78 @@ Author:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Optional
 
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from util import masked_softmax
 
+class CNN(nn.Module):
+    """Character CNN
+    """
+
+    def __init__(self, in_channel: int, out_channels: int, kernel_size:int):
+        super(CNN, self).__init__()
+        self.conv1d = nn.Conv1d(in_channels=in_channel, out_channels=out_channels, kernel_size=kernel_size)
+
+    
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        return self.conv1d(input)
+
+    def initializeUniform(self, value: float):
+        with torch.no_grad():
+            self.conv1d.weight.data.fill_(value)
+            self.conv1d.bias.data.fill_(0.0)
+
 
 class Embedding(nn.Module):
-    """Embedding layer used by BiDAF, without the character-level component.
+    """Embedding layer used by BiDAF, with optional character-level component.
 
     Word-level embeddings are further refined using a 2-layer Highway Encoder
     (see `HighwayEncoder` class for details).
 
     Args:
         word_vectors (torch.Tensor): Pre-trained word vectors.
+        char_vectors: Pre-trained char vectors.
         hidden_size (int): Size of hidden activations.
         drop_prob (float): Probability of zero-ing out activations
     """
-    def __init__(self, word_vectors, hidden_size, drop_prob):
+    def __init__(self, word_vectors: torch.Tensor, char_vectors: Optional[torch.Tensor], hidden_size, drop_prob):
         super(Embedding, self).__init__()
         self.drop_prob = drop_prob
         self.embed = nn.Embedding.from_pretrained(word_vectors)
-        self.proj = nn.Linear(word_vectors.size(1), hidden_size, bias=False)
+        # here linear_input = 300 
+        linear_input = word_vectors.size(1)
+        self.char_embed = None
+
+        if char_vectors is not None:
+            # char_vectors shape (vocab_size, char_embedding) 1376, 64
+            # breakpoint()
+            kernel_size = 5
+            cnn_input_size = char_vectors.size(1)
+            self.char_embed = nn.Embedding.from_pretrained(char_vectors)
+            self.cnn = CNN(cnn_input_size, 1, kernel_size=kernel_size)
+            # here linear_input = 312
+            linear_input += 16 - kernel_size + 1
+
+        self.proj = nn.Linear(linear_input, hidden_size, bias=False)
         self.hwy = HighwayEncoder(2, hidden_size)
 
-    def forward(self, x):
+    def forward(self, x, char_ids):
+        """
+        x shape: 64, 279
+        char_ids shape: 64, 279, 16
+        """
         emb = self.embed(x)   # (batch_size, seq_len, embed_size)
+        if char_ids is not None:
+            x1 = self.char_embed(char_ids)
+            x1_shaped = x1.view(x1.shape[0]*x1.shape[1], x1.shape[2], x1.shape[3])
+            x1t =  x1_shaped.transpose(1,2)
+            x2 = self.cnn(x1t)
+            x2_squeezed = x2.squeeze(dim=1)
+
+            x_cat = torch.cat((emb, x2.view(emb.size(0), emb.size(1), x2_squeezed.size(1))), dim=-1)
+            # breakpoint()
+            emb = x_cat
         emb = F.dropout(emb, self.drop_prob, self.training)
         emb = self.proj(emb)  # (batch_size, seq_len, hidden_size)
         emb = self.hwy(emb)   # (batch_size, seq_len, hidden_size)

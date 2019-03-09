@@ -17,6 +17,7 @@ import numpy as np
 import ujson as json
 
 from collections import Counter
+from typing import NamedTuple
 
 
 class SQuAD(data.Dataset):
@@ -724,3 +725,11 @@ def compute_f1(a_gold, a_pred):
     recall = 1.0 * num_same / len(gold_toks)
     f1 = (2 * precision * recall) / (precision + recall)
     return f1
+
+
+InputEmbeddings = NamedTuple("InputEmbeddings", [('word_vectors', torch.Tensor), ('char_vectors', torch.Tensor)])
+
+def load_embeddings(args) -> InputEmbeddings:
+    word_vectors = torch_from_json(args.word_emb_file)
+    char_vectors = torch_from_json(args.char_emb_file) if args.use_char_emb else None
+    return InputEmbeddings( word_vectors, char_vectors)
