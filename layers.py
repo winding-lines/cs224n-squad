@@ -53,14 +53,15 @@ class Embedding(nn.Module):
         if char_vectors is not None:
             # char_vectors shape (vocab_size, char_embedding) 1376, 64
             # breakpoint()
-            kernel_size = 5
             cnn_input_size = char_vectors.size(1)
             self.char_embed = nn.Embedding.from_pretrained(char_vectors, freeze=False)
 
-            self.cnn = CNN(cnn_input_size, 8, kernel_size=kernel_size)
-            self.maxpool = nn.MaxPool1d(8)
+            kernel_size = 3
+            cnn_output_size = 8
+            self.cnn = CNN(cnn_input_size, cnn_output_size, kernel_size=kernel_size)
+            self.maxpool = nn.MaxPool1d(cnn_output_size)
             # here linear_input = 308
-            linear_input += 8
+            linear_input += cnn_output_size 
 
         self.proj = nn.Linear(linear_input, hidden_size, bias=False)
         self.hwy = HighwayEncoder(2, hidden_size)
