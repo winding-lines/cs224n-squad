@@ -144,7 +144,8 @@ def main(args):
                     results, pred_dict = evaluate(model, dev_loader, device,
                                                   args.dev_eval_file,
                                                   args.max_ans_len,
-                                                  args.use_squad_v2)
+                                                  args.use_squad_v2,
+                                                  args.use_char_emb)
                     saver.save(step, model, results[args.metric_name], device)
                     ema.resume(model)
 
@@ -165,7 +166,7 @@ def main(args):
                                    num_visuals=args.num_visuals)
 
 
-def evaluate(model, data_loader, device, eval_file, max_len, use_squad_v2):
+def evaluate(model, data_loader, device, eval_file, max_len, use_squad_v2, use_char_emb):
     nll_meter = util.AverageMeter()
 
     model.eval()
@@ -179,9 +180,15 @@ def evaluate(model, data_loader, device, eval_file, max_len, use_squad_v2):
             cw_idxs = cw_idxs.to(device)
             qw_idxs = qw_idxs.to(device)
             batch_size = cw_idxs.size(0)
+            if use_char_emb:
+                cc_idxs = cc_idxs.to(device)
+                qc_idxs = qc_idxs.to(device)
+            else:
+                cc_idx = None
+                qc_idxs = None
 
             # Forward
-            log_p1, log_p2 = model(cw_idxs, qw_idxs)
+            log_p1, log_p2 = model(cw_idxs, cc_idxs, qw_idxs, qc_idxs)
             y1, y2 = y1.to(device), y2.to(device)
             loss = F.nll_loss(log_p1, y1) + F.nll_loss(log_p2, y2)
             nll_meter.update(loss.item(), batch_size)

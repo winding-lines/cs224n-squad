@@ -55,7 +55,7 @@ class Embedding(nn.Module):
             # breakpoint()
             kernel_size = 5
             cnn_input_size = char_vectors.size(1)
-            self.char_embed = nn.Embedding.from_pretrained(char_vectors)
+            self.char_embed = nn.Embedding.from_pretrained(char_vectors, freeze=False)
             self.cnn = CNN(cnn_input_size, 1, kernel_size=kernel_size)
             # here linear_input = 312
             linear_input += 16 - kernel_size + 1

@@ -1,1 +1,0 @@
-python train.py -n baseline-drop-0.5 --drop_prob=0.5
