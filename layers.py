@@ -56,9 +56,11 @@ class Embedding(nn.Module):
             kernel_size = 5
             cnn_input_size = char_vectors.size(1)
             self.char_embed = nn.Embedding.from_pretrained(char_vectors, freeze=False)
-            self.cnn = CNN(cnn_input_size, 1, kernel_size=kernel_size)
-            # here linear_input = 312
-            linear_input += 16 - kernel_size + 1
+
+            self.cnn = CNN(cnn_input_size, 8, kernel_size=kernel_size)
+            self.maxpool = nn.MaxPool1d(8)
+            # here linear_input = 308
+            linear_input += 8
 
         self.proj = nn.Linear(linear_input, hidden_size, bias=False)
         self.hwy = HighwayEncoder(2, hidden_size)
@@ -74,10 +76,11 @@ class Embedding(nn.Module):
             x1_shaped = x1.view(x1.shape[0]*x1.shape[1], x1.shape[2], x1.shape[3])
             x1t =  x1_shaped.transpose(1,2)
             x2 = self.cnn(x1t)
-            x2_squeezed = x2.squeeze(dim=1)
-
-            x_cat = torch.cat((emb, x2.view(emb.size(0), emb.size(1), x2_squeezed.size(1))), dim=-1)
+            x_maxpool = self.maxpool(F.relu(x2))
+            x2_squeezed = x_maxpool.squeeze(dim=1)
             # breakpoint()
+
+            x_cat = torch.cat((emb, x2_squeezed.view(emb.size(0), emb.size(1), x2_squeezed.size(1))), dim=-1)
             emb = x_cat
         emb = F.dropout(emb, self.drop_prob, self.training)
         emb = self.proj(emb)  # (batch_size, seq_len, hidden_size)
