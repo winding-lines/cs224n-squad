@@ -56,8 +56,8 @@ class Embedding(nn.Module):
             cnn_input_size = char_vectors.size(1)
             self.char_embed = nn.Embedding.from_pretrained(char_vectors, freeze=False)
 
-            kernel_size = 3
-            cnn_output_size = 8
+            kernel_size = 5
+            cnn_output_size = 16 
             self.cnn = CNN(cnn_input_size, cnn_output_size, kernel_size=kernel_size)
             self.maxpool = nn.MaxPool1d(cnn_output_size)
             # here linear_input = 308
