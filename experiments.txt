@@ -1,3 +1,9 @@
+# very initial baseline
+# https://www.gradescope.com/courses/34514/assignments/161228/submissions/15359657
+EM: 58.125 (+0.336) 
+F1: 61.526 (+0.382)
+
+
 python train.py -n baseline-drop-0.5 --drop_prob=0.5
 
 # char embeddings c721402f550c09c00e765798258e4d91b8ed4332
@@ -7,6 +13,23 @@ EM: 58.830 (+0.706)
 F1: 62.095 (+0.569)
 
 
-# CNN of 8 + maxpool f791f4d721d93f6d77706f46691481cd24b0df60
+# CNN of 8. kernel_width=5 + maxpool e78d62881d9a0b831731ad2a6b7d69888d7cc366
 python train.py -n char_emb_maxpool --use_char_emb
 python test.py --split dev --load_path save/train/char_emb_maxpool-01/best.pth.tar --name char_emb_maxpool-01 --use_char_emb
+EM: 59.150 (+0.319) 
+F1: 62.430 (+0.336)
+
+
+# CNN 8, kernel_width=3 ebe210016d2c8912d0d6c4011463e75211c6e6d6
+python train.py -n char_emb_maxpool_kernel_3 --use_char_emb
+python test.py --split dev --load_path save/train/char_emb_maxpool_kernel_3-01/best.pth.tar --name char_emb_maxpool-kernel_3_01 --use_char_emb
+EM: 58.629 (-0.521) 
+F1: 61.955 (-0.476)
+
+# CNN 16 4489263762e2a1cb6e5984e0d3c57870d4b1899c
+# output char_emb_cnn_16
+python train.py -n char_emb_cnn_16 --use_char_emb
+PYthon test.py --split dev --load_path save/train/char_emb_cnn_16-01/best.pth.tar --name char_emb_maxpool_kernel_3-01 --use_char_emb
+EM: 58.881 (-0.269) 
+F1: 62.414 (-0.017)
+
