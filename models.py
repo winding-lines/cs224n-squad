@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import collections
 from util import InputEmbeddings
-from typing import Optional, NamedTuple
+from typing import Optional
 
 
 class BiDAF(nn.Module):
