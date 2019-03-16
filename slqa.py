@@ -245,6 +245,10 @@ class SLQA(nn.Module):
 
         out = self.out(att, mod, c_mask)  # 2 tensors, each (batch_size, c_len)
         """
-        out = (self.bilinear_start(weighted_q, p_tilde), self.bilinear_end(weighted_q, p_tilde))        
+        logits_start = self.bilinear_start(weighted_q, p_tilde)
+        logits_end = self.bilinear_end(weighted_q, p_tilde)        
+        log_start = masked_softmax(logits_start, c_mask, log_softmax=True)
+        log_end = masked_softmax(logits_end, c_mask, log_softmax=True)
 
+        out = (log_start, log_end)
         return out
