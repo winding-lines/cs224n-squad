@@ -33,3 +33,8 @@ PYthon test.py --split dev --load_path save/train/char_emb_cnn_16-01/best.pth.ta
 EM: 58.881 (-0.269) 
 F1: 62.414 (-0.017)
 
+# First trainable 1720a494604bf8c8da5afc24f6de62bf98d45b6a
+# output slqa-incomplete-first-03
+python train.py -n slqa-incomplete-first --use_slqa
+
+dev NLL: 04.23, F1: 48.88, EM: 47.30, AvNA: 57.45
