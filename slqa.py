@@ -191,9 +191,15 @@ class SLQA(nn.Module):
         self.att = AlignedAttention(hidden_size=2 * hidden_size,
                                          drop_prob=drop_prob)
 
+<<<<<<< HEAD
         self.p_fusion = Fusion(2*hidden_size, 2*hidden_size)
 
         self.q_fusion = Fusion(2*hidden_size, 2*hidden_size)
+=======
+        self.p_fusion1 = FusionLayer(2*hidden_size)
+
+        self.q_fusion1 = FusionLayer(2*hidden_size)
+>>>>>>> 6c4c0adcf0962626ec9de62581af5d42b3c27e12
 
         self.q_self_align_final = SelfAlign(2 * hidden_size)
         self.p_temp_hack = SelfAlign(2 * hidden_size)
@@ -226,19 +232,19 @@ class SLQA(nn.Module):
         (p_tilde, q_tilde) = self.att(p_enc, q_enc,
                        p_mask, q_mask)    # 2 x tensors (batch_size, p_len, 2*hidden_size) 
 
-        # eq (8)
-        p_fused = self.p_fusion(p_enc, p_tilde)
+        # eq (8) + (11)
+        p_fused1 = self.p_fusion1(p_enc, p_tilde)
 
-        # eq (9)
-        q_fused = self.q_fusion(q_enc, q_tilde)
+        # eq (9) + (12)
+        q_fused1 = self.q_fusion1(q_enc, q_tilde)
 
         # paragraph partial processing
-        contextual_p = p_fused# self.p_temp_hack(p_tilde)
+        contextual_p = p_fused1# self.p_temp_hack(p_tilde)
         # print(f"input {p_tilde.shape} output {contextual_p.shape}")
 
         # question partial processing        
         # eq (19)
-        weighted_q = self.q_self_align_final(q_tilde)
+        weighted_q = self.q_self_align_final(q_fused1)
 
         logits_start = self.bilinear_start(weighted_q, contextual_p)
         logits_end = self.bilinear_end(weighted_q, contextual_p)        

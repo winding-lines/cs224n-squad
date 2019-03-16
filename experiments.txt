@@ -36,5 +36,9 @@ F1: 62.414 (-0.017)
 # First trainable 1720a494604bf8c8da5afc24f6de62bf98d45b6a
 # output slqa-incomplete-first-03
 python train.py -n slqa-incomplete-first --use_slqa
-
 dev NLL: 04.23, F1: 48.88, EM: 47.30, AvNA: 57.45
+
+# First fuse eq (8) and (9) 76998e0fbfa214efb9a04d3fe4ff878219dddeab
+# output slqa-fuse-eq-8-9
+python train.py -n slqa-fuse-eq-8-9 --use_slqa
+Dev NLL: 03.80, F1: 51.84, EM: 49.02, AvNA: 61.91
