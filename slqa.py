@@ -191,15 +191,9 @@ class SLQA(nn.Module):
         self.att = AlignedAttention(hidden_size=2 * hidden_size,
                                          drop_prob=drop_prob)
 
-<<<<<<< HEAD
-        self.p_fusion = Fusion(2*hidden_size, 2*hidden_size)
-
-        self.q_fusion = Fusion(2*hidden_size, 2*hidden_size)
-=======
         self.p_fusion1 = FusionLayer(2*hidden_size)
 
         self.q_fusion1 = FusionLayer(2*hidden_size)
->>>>>>> 6c4c0adcf0962626ec9de62581af5d42b3c27e12
 
         self.q_self_align_final = SelfAlign(2 * hidden_size)
         self.p_temp_hack = SelfAlign(2 * hidden_size)
