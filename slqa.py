@@ -195,8 +195,12 @@ class SLQA(nn.Module):
 
         self.q_fusion1 = FusionLayer(2*hidden_size)
 
+        self.p_enc_eq_13 = layers.RNNEncoder(input_size= 2 * hidden_size,
+                                             hidden_size = hidden_size,
+                                             num_layers= 1,
+                                             drop_prob=drop_prob)
+
         self.q_self_align_final = SelfAlign(2 * hidden_size)
-        self.p_temp_hack = SelfAlign(2 * hidden_size)
 
         self.bilinear_start = BilinearSeqAtt(2*hidden_size, 2*hidden_size)
         self.bilinear_end = BilinearSeqAtt(2*hidden_size, 2*hidden_size)
@@ -232,9 +236,11 @@ class SLQA(nn.Module):
         # eq (9) + (12)
         q_fused1 = self.q_fusion1(q_enc, q_tilde)
 
-        # paragraph partial processing
-        contextual_p = p_fused1# self.p_temp_hack(p_tilde)
-        # print(f"input {p_tilde.shape} output {contextual_p.shape}")
+        # eq (13)
+        contextual_p = self.p_enc_eq_13(p_fused1, p_len)
+
+        # more steps missing in here
+
 
         # question partial processing        
         # eq (19)
