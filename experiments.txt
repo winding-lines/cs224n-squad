@@ -46,3 +46,7 @@ Dev NLL: 03.80, F1: 51.84, EM: 49.02, AvNA: 61.91
 # highway eq (11)-(12) de7e2b74b6bb20149fd63b463c2d88c518b3217c
 python train.py -n slqa-hwy-11-12 --use_slqa
 Dev NLL: 03.66, F1: 53.93, EM: 51.44, AvNA: 62.91
+
+# slaq-eq-13 36a66b5dbaae09e474abcc2c7691ada44c2436c4
+python train.py -n slqa-eq-13 --use_slqa
+submitted EM: 60.780 (+1.630) F1: 63.619 (+1.189)
