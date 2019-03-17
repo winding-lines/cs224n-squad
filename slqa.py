@@ -63,26 +63,14 @@ class BilinearSeqAtt(nn.Module):
 
 
 # Adapted from https://github.com/SparkJiao/SLQA/blob/master/models/layers.py
-class SelfAlign(nn.Module):
+class LinearAlign(nn.Module):
+    """ Linear Align on the question side, eq (18) and (19)
+    """
     def __init__(self, input_dim):
-        super(SelfAlign, self).__init__()
+        super(LinearAlign, self).__init__()
         self.linear = nn.Linear(input_dim, input_dim, bias=False)
 
-    def forward1(self, x):
-        """ First interpretation of eq 18 in the paper, collapse towards the question`
-        """
-        # breakpoint()
-        Wx = self.linear(x)
-        # eq (18)
-        gamma = F.softmax(Wx, dim=1)
-
-        # eq (19)
-        q = torch.sum(Wx * gamma, dim=2)
-        return q
-
     def forward(self, x):
-        """ Second interpretation of eq 18 in the paper
-        """
         # breakpoint()
         Wx = self.linear(x)
         # eq (18)
@@ -91,6 +79,28 @@ class SelfAlign(nn.Module):
         # eq (19)
         q = torch.sum(Wx * gamma, dim=1)
         return q
+
+class FusedSelfAttention(nn.Module):
+    """ Self Attention on the paragraph side, eq (14) and (15).
+
+    This is a bilinear self-alignment attention function. The implementation below is based on AllenNLP's
+    https://github.com/allenai/allennlp/blob/master/allennlp/modules/matrix_attention/bilinear_matrix_attention.py
+    """
+
+    def __init__(self, input_dim):
+        super(FusedSelfAttention, self).__init__()
+        self.weights = nn.Parameter(torch.Tensor(input_dim, input_dim))
+        nn.init.xavier_uniform_(self.weights)
+        self.fuse = Fusion(input_dim, input_dim)
+
+    def forward(self, x: torch.Tensor):
+        intermediate = torch.matmul(x, self.weights)
+        final = torch.matmul(intermediate, x.transpose(1,2))
+        activation = F.softmax(x, dim=2)
+        activated = activation * x
+        fused = self.fuse(x, activated)
+
+        return fused
 
 class AlignedAttention(nn.Module):
     """Aligned attention for SLQA, adapted from BiDAF one.
@@ -204,8 +214,16 @@ class SLQA(nn.Module):
                                              hidden_size = hidden_size,
                                              num_layers= 1,
                                              drop_prob=drop_prob)
+        
+        self.self_attention = FusedSelfAttention(2 * hidden_size)
 
-        self.q_self_align_final = SelfAlign(2 * hidden_size)
+        self.p_enc_eq_17 = layers.RNNEncoder(input_size= 2 * hidden_size,
+                                             hidden_size = hidden_size,
+                                             num_layers= 1,
+                                             drop_prob=drop_prob)
+
+
+        self.q_linear_align_18 = LinearAlign(2 * hidden_size)
 
         self.bilinear_start = BilinearSeqAtt(2*hidden_size, 2*hidden_size)
         self.bilinear_end = BilinearSeqAtt(2*hidden_size, 2*hidden_size)
@@ -245,12 +263,13 @@ class SLQA(nn.Module):
         p_enc_13 = self.p_enc_eq_13(p_fused1, p_len)
         q_enc_13 = self.q_enc_eq_13(q_fused1, q_len)
 
+        p_fused_16 = self.self_attention(p_enc_13)
         # more steps missing in here
-        contextual_p = p_enc_13
+        contextual_p = self.p_enc_eq_17(p_fused_16, p_len)
 
         # question partial processing        
         # eq (19)
-        weighted_q = self.q_self_align_final(q_enc_13)
+        weighted_q = self.q_linear_align_18(q_enc_13)
 
         logits_start = self.bilinear_start(weighted_q, contextual_p)
         logits_end = self.bilinear_end(weighted_q, contextual_p)        
