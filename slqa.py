@@ -93,7 +93,7 @@ class SelfAlign(nn.Module):
         return q
 
 class AlignedAttention(nn.Module):
-    """Aligned attention for SLQA.
+    """Aligned attention for SLQA, adapted from BiDAF one.
 
     Computes attention in two directions:
     The context attends to the query and the query attends to the context.
@@ -200,6 +200,11 @@ class SLQA(nn.Module):
                                              num_layers= 1,
                                              drop_prob=drop_prob)
 
+        self.q_enc_eq_13 = layers.RNNEncoder(input_size= 2 * hidden_size,
+                                             hidden_size = hidden_size,
+                                             num_layers= 1,
+                                             drop_prob=drop_prob)
+
         self.q_self_align_final = SelfAlign(2 * hidden_size)
 
         self.bilinear_start = BilinearSeqAtt(2*hidden_size, 2*hidden_size)
@@ -237,14 +242,15 @@ class SLQA(nn.Module):
         q_fused1 = self.q_fusion1(q_enc, q_tilde)
 
         # eq (13)
-        contextual_p = self.p_enc_eq_13(p_fused1, p_len)
+        p_enc_13 = self.p_enc_eq_13(p_fused1, p_len)
+        q_enc_13 = self.q_enc_eq_13(q_fused1, q_len)
 
         # more steps missing in here
-
+        contextual_p = p_enc_13
 
         # question partial processing        
         # eq (19)
-        weighted_q = self.q_self_align_final(q_fused1)
+        weighted_q = self.q_self_align_final(q_enc_13)
 
         logits_start = self.bilinear_start(weighted_q, contextual_p)
         logits_end = self.bilinear_end(weighted_q, contextual_p)        
