@@ -8,8 +8,9 @@ import models
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from util import masked_softmax
 
-# Copied from https://github.com/SparkJiao/SLQA/blob/master/models/layers.py
 class Fusion(nn.Module):
+    """ Implement heuristic matching trick from the paper
+    """
     def __init__(self, input_dim, hidden_dim):
         super(Fusion, self).__init__()
         self.linear = nn.Linear(input_dim * 4, hidden_dim, bias=True)
@@ -19,14 +20,10 @@ class Fusion(nn.Module):
         z = torch.cat([x, y, x * y, x - y], dim=2)
         return self.tanh(self.linear(z))
 
-# Copied from https://github.com/SparkJiao/SLQA/blob/master/models/layers.py
 class FusionLayer(nn.Module):
     """
-    Heuristic matching trick
+    Heuristic matching trick from paper + highway.
 
-    m(x, y) = W([x, y, x * y, x - y]) + b
-    g(x, y) = w([x, y, x * y, x - y]) + b
-    :returns g(x, y) * m(x, y) + (1 - g(x, y)) * x
     """
 
     def __init__(self, input_dim):
@@ -43,17 +40,19 @@ class FusionLayer(nn.Module):
         return gated * fusion + (1 - gated) * x
 
 
-# Copied from https://github.com/SparkJiao/SLQA/blob/master/models/layers.py
 class BilinearSeqAtt(nn.Module):
+    """ Combines the paragraph and question processing pipelines at the very end.
+
+    This is used to implement equations 20 and 21.
+    """
     def __init__(self, input_dim1, input_dim2):
         super(BilinearSeqAtt, self).__init__()
         self.linear = nn.Linear(input_dim1, input_dim2)
 
-    def forward(self, x, y):
+    def forward(self, x: torch.Tensor, y: torch.Tensor):
         """
-        :param x: b * dim1
-        :param y: b * len * dim2
-        :return:
+        x Tensor: shape (input_dim1, input_dim1)
+        y Tensor: shape (input_dim2, input_dim2)
         """
         # breakpoint()
         xW = self.linear(x)
@@ -62,7 +61,6 @@ class BilinearSeqAtt(nn.Module):
         return xWy
 
 
-# Adapted from https://github.com/SparkJiao/SLQA/blob/master/models/layers.py
 class LinearAlign(nn.Module):
     """ Linear Align on the question side, eq (18) and (19)
     """
