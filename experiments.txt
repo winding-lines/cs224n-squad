@@ -47,9 +47,12 @@ Dev NLL: 03.80, F1: 51.84, EM: 49.02, AvNA: 61.91
 python train.py -n slqa-hwy-11-12 --use_slqa
 Dev NLL: 03.66, F1: 53.93, EM: 51.44, AvNA: 62.91
 
-# slaq-eq-13 36a66b5dbaae09e474abcc2c7691ada44c2436c4
+# slqa-eq-13 36a66b5dbaae09e474abcc2c7691ada44c2436c4
 python train.py -n slqa-eq-13 --use_slqa
-submitted dev EM: 60.780 (+1.630) F1: 63.619 (+1.189)
+submitted dev   EM: 60.780 (+1.630) F1: 63.619 (+1.189)
+python test.py --split test --load_path save/train/slqa-eq-13-01/best.pth.tar --name slqa-eq-13 --use_slqa
+submitted test  EM: 57.954 (+57.954) F1: 61.588 (+61.588) 1/3 submissions used
+https://www.gradescope.com/courses/34514/assignments/161273/submissions/15700266
 
 #  Finishing paragraph eqs 14,15,17 29550e2ba79b7304e085a43b060337dd895508f8
 python train.py -n slqa-p-14-17 --use_slqa
