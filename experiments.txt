@@ -58,3 +58,7 @@ https://www.gradescope.com/courses/34514/assignments/161273/submissions/15700266
 python train.py -n slqa-p-14-17 --use_slqa
 python test.py --split dev --load_path save/train/slqa-p-14-17-01/best.pth.tar --name slqa-p-14-17 --use_slqa
 submitted dev EM: 59.335 (-1.445) F1: 62.426 (-1.193)
+
+# Final-sat-1 4741960dde5701af5945de8ce829ff483d6e409b
+python train.py -n slqa-final-sat --use_slqa
+submitted dev EM: 61.452  64.608 (+0.988)
