@@ -270,9 +270,12 @@ class SLQA(nn.Module):
         # more steps missing in here
         contextual_p = self.p_enc_eq_17(p_fused_16, p_len)
 
-        # question partial processing        
+        ##  question processing
+        # try without the last RNN
+        # q_enc_17 = self.q_enc_eq_17(q_enc_13, q_len)
+        q_enc_17 = q_enc_13
+
         # eq (19)
-        q_enc_17 = self.q_enc_eq_17(q_enc_13, q_len)
         weighted_q = self.q_linear_align_18(q_enc_17)
 
         logits_start = self.bilinear_start(weighted_q, contextual_p)
