@@ -221,7 +221,10 @@ class SLQA(nn.Module):
                                              hidden_size = hidden_size,
                                              num_layers= 1,
                                              drop_prob=drop_prob)
-
+        self.q_enc_eq_17 = layers.RNNEncoder(input_size= 2 * hidden_size,
+                                             hidden_size = hidden_size,
+                                             num_layers= 1,
+                                             drop_prob=drop_prob)
 
         self.q_linear_align_18 = LinearAlign(2 * hidden_size)
 
@@ -269,7 +272,8 @@ class SLQA(nn.Module):
 
         # question partial processing        
         # eq (19)
-        weighted_q = self.q_linear_align_18(q_enc_13)
+        q_enc_17 = self.q_enc_eq_17(q_enc_13)
+        weighted_q = self.q_linear_align_18(q_enc_17)
 
         logits_start = self.bilinear_start(weighted_q, contextual_p)
         logits_end = self.bilinear_end(weighted_q, contextual_p)        
