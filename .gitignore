@@ -14,3 +14,4 @@ lib64
 pip-selfcheck.json
 bert_output/
 .vscode
+tmp
