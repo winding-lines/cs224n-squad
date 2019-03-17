@@ -272,7 +272,7 @@ class SLQA(nn.Module):
 
         # question partial processing        
         # eq (19)
-        q_enc_17 = self.q_enc_eq_17(q_enc_13)
+        q_enc_17 = self.q_enc_eq_17(q_enc_13, q_len)
         weighted_q = self.q_linear_align_18(q_enc_17)
 
         logits_start = self.bilinear_start(weighted_q, contextual_p)
