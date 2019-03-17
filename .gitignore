@@ -4,6 +4,7 @@ __pycache__
 .texpadtmp/
 data/
 save/
+save-incomplete/
 bin/
 lib/
 pyvenv.cfg

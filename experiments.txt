@@ -49,4 +49,9 @@ Dev NLL: 03.66, F1: 53.93, EM: 51.44, AvNA: 62.91
 
 # slaq-eq-13 36a66b5dbaae09e474abcc2c7691ada44c2436c4
 python train.py -n slqa-eq-13 --use_slqa
-submitted EM: 60.780 (+1.630) F1: 63.619 (+1.189)
+submitted dev EM: 60.780 (+1.630) F1: 63.619 (+1.189)
+
+#  Finishing paragraph eqs 14,15,17 29550e2ba79b7304e085a43b060337dd895508f8
+python train.py -n slqa-p-14-17 --use_slqa
+python test.py --split dev --load_path save/train/slqa-p-14-17-01/best.pth.tar --name slqa-p-14-17 --use_slqa
+submitted dev EM: 59.335 (-1.445) F1: 62.426 (-1.193)
