@@ -189,6 +189,9 @@ def add_common_args(parser):
     parser.add_argument('--word_emb_file',
                         type=str,
                         default='./data/word_emb.json')
+    parser.add_argument('--word_cnt_file',
+                        type=str,
+                        default='./data/word_cnt.json')
     parser.add_argument('--char_emb_file',
                         type=str,
                         default='./data/char_emb.json')

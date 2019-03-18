@@ -733,3 +733,7 @@ def load_embeddings(args) -> InputEmbeddings:
     word_vectors = torch_from_json(args.word_emb_file)
     char_vectors = torch_from_json(args.char_emb_file) if args.use_char_emb else None
     return InputEmbeddings( word_vectors, char_vectors)
+
+def load_manu_features(args):
+    word_count = torch_from_json(args.word_cnt_file)
+    return word_count

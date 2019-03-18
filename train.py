@@ -44,6 +44,11 @@ def main(args):
     # Get embeddings
     log.info('Loading embeddings...')
     embeddings = util.load_embeddings(args)
+    print("embedding size: ", embeddings.word_vectors.size())
+
+    log.info('Loading manual features...')
+    fea = util.load_manu_features(args).unsqueeze(1)
+    print("manual feature size: ", fea.size())
 
     # Get model
     log.info('Building model...')
@@ -53,6 +58,7 @@ def main(args):
                   drop_prob=args.drop_prob
                   ) if not args.use_slqa else SLQA(
                       embeddings=embeddings, 
+                      features=fea,
                       hidden_size=args.hidden_size,
                       drop_prob=args.drop_prob)
     model = nn.DataParallel(model, args.gpu_ids)

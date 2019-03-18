@@ -181,10 +181,13 @@ class SLQA(nn.Module):
     http://www.aclweb.org/anthology/P18-1158
 
     """
-    def __init__(self, embeddings:InputEmbeddings, hidden_size, drop_prob=0.):
+    def __init__(self, embeddings:InputEmbeddings, features, hidden_size, drop_prob=0.):
         super(SLQA, self).__init__()
         word_vectors = embeddings.word_vectors
         char_vectors = embeddings.char_vectors
+        # manual features
+        self.features = features
+        fea_dim = features.size(1)
 
         self.emb = layers.Embedding(word_vectors=word_vectors,
                                     char_vectors=char_vectors,
@@ -203,7 +206,7 @@ class SLQA(nn.Module):
 
         self.q_fusion1 = FusionLayer(2*hidden_size)
 
-        self.p_enc_eq_13 = layers.RNNEncoder(input_size= 2 * hidden_size,
+        self.p_enc_eq_13 = layers.RNNEncoder(input_size= 2 * hidden_size + fea_dim,
                                              hidden_size = hidden_size,
                                              num_layers= 1,
                                              drop_prob=drop_prob)
@@ -260,8 +263,12 @@ class SLQA(nn.Module):
         # eq (9) + (12)
         q_fused1 = self.q_fusion1(q_enc, q_tilde)
 
+        # try adding manual feature in eq (13)
+        fea = nn.Embedding.from_pretrained(self.features) # (batch_size, p_len, 1)
+        D = torch.cat([p_fused1, fea], dim = 2)
+
         # eq (13)
-        p_enc_13 = self.p_enc_eq_13(p_fused1, p_len)
+        p_enc_13 = self.p_enc_eq_13(D, p_len)
         q_enc_13 = self.q_enc_eq_13(q_fused1, q_len)
 
         p_fused_16 = self.self_attention(p_enc_13)

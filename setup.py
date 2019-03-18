@@ -181,8 +181,9 @@ def get_embedding(counter, data_type, limit=-1, emb_file=None, vec_size=None, nu
     idx2emb_dict = {idx: embedding_dict[token]
                     for token, idx in token2idx_dict.items()}
     emb_mat = [idx2emb_dict[idx] for idx in range(len(idx2emb_dict))]
-    return emb_mat, token2idx_dict
-
+    idx2cnt_dict = {idx: counter[token] for token, idx in token2idx_dict.items()}
+    cnt_mat = [idx2cnt_dict[idx] for idx in range(len(idx2cnt_dict))]
+    return emb_mat, token2idx_dict, cnt_mat
 
 def convert_to_features(args, data, word2idx_dict, char2idx_dict, is_test):
     example = {}
@@ -353,9 +354,9 @@ def pre_process(args):
     # Process training set and use it to decide on the word/character vocabularies
     word_counter, char_counter = Counter(), Counter()
     train_examples, train_eval = process_file(args.train_file, "train", word_counter, char_counter)
-    word_emb_mat, word2idx_dict = get_embedding(
+    word_emb_mat, word2idx_dict, word_cnt_mat = get_embedding(
         word_counter, 'word', emb_file=args.glove_file, vec_size=args.glove_dim, num_vectors=args.glove_num_vecs)
-    char_emb_mat, char2idx_dict = get_embedding(
+    char_emb_mat, char2idx_dict, _ = get_embedding(
         char_counter, 'char', emb_file=None, vec_size=args.char_dim)
 
     # Process dev and test sets
@@ -370,6 +371,7 @@ def pre_process(args):
         save(args.test_meta_file, test_meta, message="test meta")
 
     save(args.word_emb_file, word_emb_mat, message="word embedding")
+    save(args.word_cnt_file, word_cnt_mat, message="word count")
     save(args.char_emb_file, char_emb_mat, message="char embedding")
     save(args.train_eval_file, train_eval, message="train eval")
     save(args.dev_eval_file, dev_eval, message="dev eval")
