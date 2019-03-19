@@ -653,17 +653,52 @@ def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
         scores_for_ground_truths.append(score)
     return max(scores_for_ground_truths)
 
+to_print = 10
+def analyze(question):
+    """Analyze the type of question:
+        - who
+        - what
+        - where
+    """
+    global to_print
+    words = re.split("[ '?:!,]", question.lower())
+    for keyword in ["what","who", "whose", "when","which", "where", "how"]:
+        if keyword in words:
+            if keyword == 'which' and to_print>0:
+                print(question)
+                to_print -=1 
+            return keyword if keyword != "whose" else "who"
+    
+    return "--"
 
 def eval_dicts(gold_dict, pred_dict, no_answer):
     avna = f1 = em = total = 0
+    per_question_f1 = {}
+    per_question_em = {}
+    per_question_total = {}
+    
     for key, value in pred_dict.items():
         total += 1
         ground_truths = gold_dict[key]['answers']
         prediction = value
-        em += metric_max_over_ground_truths(compute_em, prediction, ground_truths)
-        f1 += metric_max_over_ground_truths(compute_f1, prediction, ground_truths)
+        em_1 = metric_max_over_ground_truths(compute_em, prediction, ground_truths)
+        em += em_1
+        f1_1 = metric_max_over_ground_truths(compute_f1, prediction, ground_truths)
+        f1 += f1_1
         if no_answer:
             avna += compute_avna(prediction, ground_truths)
+        question = gold_dict[key]['question']
+        kwd = analyze(question)
+        per_question_f1[kwd] = per_question_f1.get(kwd,0) + f1_1
+        per_question_em[kwd] = per_question_em.get(kwd,0) + em_1
+        per_question_total[kwd] = per_question_total.get(kwd,0) + 1
+
+    print("Question & EM & F1 & Total\\\\")
+    for k,v in per_question_f1.items():
+        t = per_question_total[k]
+        pqf1 = 100. * v/t
+        pqem = 100. * per_question_em[k] / t
+        print(f"{k} & {pqem:.3} & {pqf1:.3} & {t} \\\\")
 
     eval_dict = {'EM': 100. * em / total,
                  'F1': 100. * f1 / total}
