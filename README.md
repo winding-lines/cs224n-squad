@@ -1,8 +1,9 @@
+This is an (approximate) implementation of "Multi-Granularity Hierarchical Attention Fusion
+Networksfor Reading Comprehension and Question Answering"
+http://www.aclweb.org/anthology/P18-1158
+
+
 # Setup
-
-This is the setup for install on RHEL 7.
-
-First get the torch wheel compiled for our setup from mseritan@linkedin.com
 
 Create a venv environment and activate it
 
@@ -13,3 +14,7 @@ pip install --upgrade pip
 Install the dependencies
 
 pip install -r requirements.txt
+
+# Running
+
+See experiments.txt for command line examples on how to exercise this functionality.
