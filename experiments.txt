@@ -33,3 +33,32 @@ PYthon test.py --split dev --load_path save/train/char_emb_cnn_16-01/best.pth.ta
 EM: 58.881 (-0.269) 
 F1: 62.414 (-0.017)
 
+# First trainable 1720a494604bf8c8da5afc24f6de62bf98d45b6a
+# output slqa-incomplete-first-03
+python train.py -n slqa-incomplete-first --use_slqa
+dev NLL: 04.23, F1: 48.88, EM: 47.30, AvNA: 57.45
+
+# First fuse eq (8) and (9) 76998e0fbfa214efb9a04d3fe4ff878219dddeab
+# output slqa-fuse-eq-8-9
+python train.py -n slqa-fuse-eq-8-9 --use_slqa
+Dev NLL: 03.80, F1: 51.84, EM: 49.02, AvNA: 61.91
+
+# highway eq (11)-(12) de7e2b74b6bb20149fd63b463c2d88c518b3217c
+python train.py -n slqa-hwy-11-12 --use_slqa
+Dev NLL: 03.66, F1: 53.93, EM: 51.44, AvNA: 62.91
+
+# slqa-eq-13 36a66b5dbaae09e474abcc2c7691ada44c2436c4
+python train.py -n slqa-eq-13 --use_slqa
+submitted dev   EM: 60.780 (+1.630) F1: 63.619 (+1.189)
+python test.py --split test --load_path save/train/slqa-eq-13-01/best.pth.tar --name slqa-eq-13 --use_slqa
+submitted test  EM: 57.954 (+57.954) F1: 61.588 (+61.588) 1/3 submissions used
+https://www.gradescope.com/courses/34514/assignments/161273/submissions/15700266
+
+#  Finishing paragraph eqs 14,15,17 29550e2ba79b7304e085a43b060337dd895508f8
+python train.py -n slqa-p-14-17 --use_slqa
+python test.py --split dev --load_path save/train/slqa-p-14-17-01/best.pth.tar --name slqa-p-14-17 --use_slqa
+submitted dev EM: 59.335 (-1.445) F1: 62.426 (-1.193)
+
+# Final-sat-1 4741960dde5701af5945de8ce829ff483d6e409b
+python train.py -n slqa-final-sat --use_slqa
+submitted dev EM: 61.452  F1: 64.608 (+0.988)

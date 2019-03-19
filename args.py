@@ -197,6 +197,11 @@ def add_common_args(parser):
                         const=True,
                         nargs='?',
                         default=True)
+    parser.add_argument('--use_slqa', 
+                        type=bool, 
+                        const=True, 
+                        nargs='?', 
+                        default=False)
     parser.add_argument('--train_eval_file',
                         type=str,
                         default='./data/train_eval.json')
