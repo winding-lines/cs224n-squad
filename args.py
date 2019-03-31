@@ -201,7 +201,7 @@ def add_common_args(parser):
                         type=bool, 
                         const=True, 
                         nargs='?', 
-                        default=False)
+                        default=True)
     parser.add_argument('--train_eval_file',
                         type=str,
                         default='./data/train_eval.json')
