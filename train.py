@@ -4,42 +4,50 @@ Author:
     Chris Chute (chute@stanford.edu)
 """
 
-import numpy as np
 import random
+from collections import OrderedDict
+from json import dumps
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.optim.lr_scheduler as sched
 import torch.utils.data as data
-import util
-
-from args import get_train_args
-from collections import OrderedDict
-from json import dumps
-from models import BiDAF
-from slqa import SLQA
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 from ujson import load as json_load
-from util import collate_fn, SQuAD
+
+import util
+from args import get_train_args
+from models import BiDAF
+from slqa import SLQA
+from util import SQuAD, collate_fn
 
 
+def _init_random_seed(args, log):
+    # Set random seed
+    log.info('Using random seed %s...', args.seed)
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
+
+
+# pylint: disable=R0914,R0915
 def main(args):
+    """Main entry point for training"""
+
     # Set up logging and devices
     args.save_dir = util.get_save_dir(args.save_dir, args.name, training=True)
     log = util.get_logger(args.save_dir, args.name)
     tbx = SummaryWriter(args.save_dir)
     device, args.gpu_ids = util.get_available_devices()
-    log.info('Args: {}'.format(dumps(vars(args), indent=4, sort_keys=True)))
+    log.info('Args: %s', format(dumps(vars(args), indent=4, sort_keys=True)))
     args.batch_size *= max(1, len(args.gpu_ids))
 
-    # Set random seed
-    log.info('Using random seed {}...'.format(args.seed))
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed_all(args.seed)
+    _init_random_seed(args, log)
 
     # Get embeddings
     log.info('Loading embeddings...')
@@ -52,12 +60,12 @@ def main(args):
                   hidden_size=args.hidden_size,
                   drop_prob=args.drop_prob
                   ) if not args.use_slqa else SLQA(
-                      embeddings=embeddings, 
+                      embeddings=embeddings,
                       hidden_size=args.hidden_size,
                       drop_prob=args.drop_prob)
     model = nn.DataParallel(model, args.gpu_ids)
     if args.load_path:
-        log.info('Loading checkpoint from {}...'.format(args.load_path))
+        log.info('Loading checkpoint from %s...', args.load_path)
         model, step = util.load_model(model, args.load_path, args.gpu_ids)
     else:
         step = 0
@@ -98,10 +106,10 @@ def main(args):
     epoch = step // len(train_dataset)
     while epoch != args.num_epochs:
         epoch += 1
-        log.info('Starting epoch {}...'.format(epoch))
+        log.info('Starting epoch %s...', epoch)
         with torch.enable_grad(), \
                 tqdm(total=len(train_loader.dataset)) as progress_bar:
-            for cw_idxs, cc_idxs, qw_idxs, qc_idxs, y1, y2, ids in train_loader:
+            for cw_idxs, cc_idxs, qw_idxs, qc_idxs, y1, y2, dummy_ids in train_loader:
                 # Setup for forward
                 cw_idxs = cw_idxs.to(device)
                 qw_idxs = qw_idxs.to(device)
@@ -110,7 +118,7 @@ def main(args):
                     cc_idxs = cc_idxs.to(device)
                     qc_idxs = qc_idxs.to(device)
                 else:
-                    cc_idx = None
+                    cc_idxs = None
                     qc_idxs = None
 
                 optimizer.zero_grad()
@@ -143,7 +151,7 @@ def main(args):
                     steps_till_eval = args.eval_steps
 
                     # Evaluate and save checkpoint
-                    log.info('Evaluating at step {}...'.format(step))
+                    log.info('Evaluating at step %s...', step)
                     ema.assign(model)
                     results, pred_dict = evaluate(model, dev_loader, device,
                                                   args.dev_eval_file,
@@ -156,7 +164,7 @@ def main(args):
                     # Log to console
                     results_str = ', '.join('{}: {:05.2f}'.format(k, v)
                                             for k, v in results.items())
-                    log.info('Dev {}'.format(results_str))
+                    log.info('Dev %s', results_str)
 
                     # Log to TensorBoard
                     log.info('Visualizing in TensorBoard...')
@@ -170,7 +178,10 @@ def main(args):
                                    num_visuals=args.num_visuals)
 
 
+# pylint: disable=C0111,R0913
 def evaluate(model, data_loader, device, eval_file, max_len, use_squad_v2, use_char_emb):
+    """Run model on evaluation data set"""
+
     nll_meter = util.AverageMeter()
 
     model.eval()
@@ -188,7 +199,7 @@ def evaluate(model, data_loader, device, eval_file, max_len, use_squad_v2, use_c
                 cc_idxs = cc_idxs.to(device)
                 qc_idxs = qc_idxs.to(device)
             else:
-                cc_idx = None
+                cc_idxs = None
                 qc_idxs = None
 
             # Forward
