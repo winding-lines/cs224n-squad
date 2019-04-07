@@ -94,8 +94,8 @@ class FusedSelfAttention(nn.Module):
     def forward(self, x: torch.Tensor):
         intermediate = torch.matmul(x, self.weights)
         final = torch.matmul(intermediate, x.transpose(1,2))
-        activation = F.softmax(x, dim=2)
-        activated = activation * x
+        activation = F.softmax(final, dim=2)
+        activated = torch.matmul(activation,x)
         fused = self.fuse(x, activated)
 
         return fused
