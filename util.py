@@ -1,23 +1,25 @@
+# pylint: disable=R0913,R0902,R0914,W0702
 """Utility classes and methods.
 
 Author:
     Chris Chute (chute@stanford.edu)
 """
+
 import logging
 import os
 import queue
 import re
 import shutil
 import string
+from collections import Counter
+from typing import NamedTuple
+
+import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.utils.data as data
 import tqdm
-import numpy as np
 import ujson as json
-
-from collections import Counter
-from typing import NamedTuple
 
 
 class SQuAD(data.Dataset):
@@ -42,27 +44,32 @@ class SQuAD(data.Dataset):
         data_path (str): Path to .npz file containing pre-processed dataset.
         use_v2 (bool): Whether to use SQuAD 2.0 questions. Otherwise only use SQuAD 1.1.
     """
+
     def __init__(self, data_path, use_v2=True):
         super(SQuAD, self).__init__()
 
         dataset = np.load(data_path)
         self.context_idxs = torch.from_numpy(dataset['context_idxs']).long()
-        self.context_char_idxs = torch.from_numpy(dataset['context_char_idxs']).long()
+        self.context_char_idxs = torch.from_numpy(
+            dataset['context_char_idxs']).long()
         self.question_idxs = torch.from_numpy(dataset['ques_idxs']).long()
-        self.question_char_idxs = torch.from_numpy(dataset['ques_char_idxs']).long()
+        self.question_char_idxs = torch.from_numpy(
+            dataset['ques_char_idxs']).long()
         self.y1s = torch.from_numpy(dataset['y1s']).long()
         self.y2s = torch.from_numpy(dataset['y2s']).long()
 
         if use_v2:
             # SQuAD 2.0: Use index 0 for no-answer token (token 1 = OOV)
-            batch_size, c_len, w_len = self.context_char_idxs.size()
+            batch_size, dummy_c_len, w_len = self.context_char_idxs.size()
             ones = torch.ones((batch_size, 1), dtype=torch.int64)
             self.context_idxs = torch.cat((ones, self.context_idxs), dim=1)
             self.question_idxs = torch.cat((ones, self.question_idxs), dim=1)
 
             ones = torch.ones((batch_size, 1, w_len), dtype=torch.int64)
-            self.context_char_idxs = torch.cat((ones, self.context_char_idxs), dim=1)
-            self.question_char_idxs = torch.cat((ones, self.question_char_idxs), dim=1)
+            self.context_char_idxs = torch.cat(
+                (ones, self.context_char_idxs), dim=1)
+            self.question_char_idxs = torch.cat(
+                (ones, self.question_char_idxs), dim=1)
 
             self.y1s += 1
             self.y2s += 1
@@ -106,6 +113,7 @@ def collate_fn(examples):
         https://github.com/yunjey/seq2seq-dataloader
     """
     def merge_0d(scalars, dtype=torch.int64):
+        # pylint: disable=E1102
         return torch.tensor(scalars, dtype=dtype)
 
     def merge_1d(arrays, dtype=torch.int64, pad_value=0):
@@ -119,7 +127,8 @@ def collate_fn(examples):
     def merge_2d(matrices, dtype=torch.int64, pad_value=0):
         heights = [(m.sum(1) != pad_value).sum() for m in matrices]
         widths = [(m.sum(0) != pad_value).sum() for m in matrices]
-        padded = torch.zeros(len(matrices), max(heights), max(widths), dtype=dtype)
+        padded = torch.zeros(len(matrices), max(
+            heights), max(widths), dtype=dtype)
         for i, seq in enumerate(matrices):
             height, width = heights[i], widths[i]
             padded[i, :height, :width] = seq[:height, :width]
@@ -150,6 +159,7 @@ class AverageMeter:
     Adapted from:
         > https://github.com/pytorch/examples/blob/master/imagenet/main.py
     """
+
     def __init__(self):
         self.avg = 0
         self.sum = 0
@@ -178,6 +188,7 @@ class EMA:
         model (torch.nn.Module): Model with parameters whose EMA will be kept.
         decay (float): Decay rate for exponential moving average.
     """
+
     def __init__(self, model, decay):
         self.decay = decay
         self.shadow = {}
@@ -238,6 +249,7 @@ class CheckpointSaver:
             minimizes the metric.
         log (logging.Logger): Optional logger for printing information.
     """
+
     def __init__(self, save_dir, max_checkpoints, metric_name,
                  maximize_metric=False, log=None):
         super(CheckpointSaver, self).__init__()
@@ -404,7 +416,8 @@ def visualize(tbx, pred_dict, eval_path, step, split, num_visuals):
     if num_visuals > len(pred_dict):
         num_visuals = len(pred_dict)
 
-    visual_ids = np.random.choice(list(pred_dict), size=num_visuals, replace=False)
+    visual_ids = np.random.choice(
+        list(pred_dict), size=num_visuals, replace=False)
 
     with open(eval_path, 'r') as eval_file:
         eval_dict = json.load(eval_file)
@@ -467,7 +480,8 @@ def get_save_dir(base_dir, name, training, id_max=100):
     """
     for uid in range(1, id_max):
         subdir = 'train' if training else 'test'
-        save_dir = os.path.join(base_dir, subdir, '{}-{:02d}'.format(name, uid))
+        save_dir = os.path.join(
+            base_dir, subdir, '{}-{:02d}'.format(name, uid))
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
             return save_dir
@@ -493,6 +507,7 @@ def get_logger(log_dir, name):
         See Also:
             > https://stackoverflow.com/questions/38543506
         """
+
         def emit(self, record):
             try:
                 msg = self.format(record)
@@ -500,6 +515,7 @@ def get_logger(log_dir, name):
                 self.flush()
             except (KeyboardInterrupt, SystemExit):
                 raise
+
             except:
                 self.handleError(record)
 
@@ -645,6 +661,8 @@ def convert_tokens(eval_dict, qa_id, y_start_list, y_end_list, no_answer):
 
 
 def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
+    """Compute the max of the metric across all the ground truths."""
+
     if not ground_truths:
         return metric_fn(prediction, '')
     scores_for_ground_truths = []
@@ -653,52 +671,24 @@ def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
         scores_for_ground_truths.append(score)
     return max(scores_for_ground_truths)
 
-to_print = 10
-def analyze(question):
-    """Analyze the type of question:
-        - who
-        - what
-        - where
-    """
-    global to_print
-    words = re.split("[ '?:!,]", question.lower())
-    for keyword in ["what","who", "whose", "when","which", "where", "how"]:
-        if keyword in words:
-            if keyword == 'which' and to_print>0:
-                print(question)
-                to_print -=1 
-            return keyword if keyword != "whose" else "who"
-    
-    return "--"
 
 def eval_dicts(gold_dict, pred_dict, no_answer):
+    """ Evaluate the train statistics for the input dictionaries."""
+
     avna = f1 = em = total = 0
-    per_question_f1 = {}
-    per_question_em = {}
-    per_question_total = {}
-    
+
     for key, value in pred_dict.items():
         total += 1
         ground_truths = gold_dict[key]['answers']
         prediction = value
-        em_1 = metric_max_over_ground_truths(compute_em, prediction, ground_truths)
+        em_1 = metric_max_over_ground_truths(
+            compute_em, prediction, ground_truths)
         em += em_1
-        f1_1 = metric_max_over_ground_truths(compute_f1, prediction, ground_truths)
+        f1_1 = metric_max_over_ground_truths(
+            compute_f1, prediction, ground_truths)
         f1 += f1_1
         if no_answer:
             avna += compute_avna(prediction, ground_truths)
-        question = gold_dict[key]['question']
-        kwd = analyze(question)
-        per_question_f1[kwd] = per_question_f1.get(kwd,0) + f1_1
-        per_question_em[kwd] = per_question_em.get(kwd,0) + em_1
-        per_question_total[kwd] = per_question_total.get(kwd,0) + 1
-
-    print("Question & EM & F1 & Total\\\\")
-    for k,v in per_question_f1.items():
-        t = per_question_total[k]
-        pqf1 = 100. * v/t
-        pqem = 100. * per_question_em[k] / t
-        print(f"{k} & {pqem:.3} & {pqf1:.3} & {t} \\\\")
 
     eval_dict = {'EM': 100. * em / total,
                  'F1': 100. * f1 / total}
@@ -737,21 +727,27 @@ def normalize_answer(s):
 
 
 def get_tokens(s):
+    """ Split s in tokens"""
+
     if not s:
         return []
     return normalize_answer(s).split()
 
 
 def compute_em(a_gold, a_pred):
+    """ Compute Exact Match score """
+
     return int(normalize_answer(a_gold) == normalize_answer(a_pred))
 
 
 def compute_f1(a_gold, a_pred):
+    """Compute F1 score."""
+
     gold_toks = get_tokens(a_gold)
     pred_toks = get_tokens(a_pred)
     common = Counter(gold_toks) & Counter(pred_toks)
     num_same = sum(common.values())
-    if len(gold_toks) == 0 or len(pred_toks) == 0:
+    if not gold_toks or not pred_toks:
         # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
         return int(gold_toks == pred_toks)
     if num_same == 0:
@@ -762,9 +758,14 @@ def compute_f1(a_gold, a_pred):
     return f1
 
 
-InputEmbeddings = NamedTuple("InputEmbeddings", [('word_vectors', torch.Tensor), ('char_vectors', torch.Tensor)])
+InputEmbeddings = NamedTuple("InputEmbeddings", [(
+    'word_vectors', torch.Tensor), ('char_vectors', torch.Tensor)])
+
 
 def load_embeddings(args) -> InputEmbeddings:
+    """Load the embeddings from file, based on the passed in arguments."""
+
     word_vectors = torch_from_json(args.word_emb_file)
-    char_vectors = torch_from_json(args.char_emb_file) if args.use_char_emb else None
-    return InputEmbeddings( word_vectors, char_vectors)
+    char_vectors = torch_from_json(
+        args.char_emb_file) if args.use_char_emb else None
+    return InputEmbeddings(word_vectors, char_vectors)
